@@ -31,6 +31,11 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 	case pb.Message_BEB_DELIVER:
 		switch m.BebDeliver.Message.Type {
 		case pb.Message_NNAR_INTERNAL_READ:
+			if nnar.ReadId == 0 {
+				nnar.ReadId = m.BebDeliver.Message.NnarInternalRead.ReadId
+			}
+			log.Info("Internal read from %v", m.BebDeliver.Message.NnarInternalRead.ReadId)
+			log.Info("BCAST MSJ INTERNAL READ %v", m)
 			msgToSend = &pb.Message{
 				Type:              pb.Message_PL_SEND,
 				FromAbstractionId: aId,
@@ -45,7 +50,9 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 					},
 				},
 			}
+			log.Debug("SENDING MSG %v", msgToSend)
 		case pb.Message_NNAR_INTERNAL_WRITE:
+			log.Info("Internal write from %v", m.BebDeliver.Message.NnarInternalWrite.ReadId)
 			// update the value
 			writerMsg := m.BebDeliver.Message.NnarInternalWrite
 
@@ -85,30 +92,34 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 			return errors.New("message not supported")
 		}
 	case pb.Message_NNAR_WRITE:
-		nnar.ReadId += 1
+		nnar.ReadId = nnar.ReadId + 1
 		nnar.WriteVal = m.NnarWrite.Value
 		nnar.Acks = 0
 		nnar.ReadList = make(map[int32]*pb.NnarInternalValue)
+		log.Info("Init write %v with readid %v", nnar.WriteVal, nnar.ReadId)
 
 		// broadcast internal read
 		msgToSend = &pb.Message{
 			Type:              pb.Message_BEB_BROADCAST,
 			FromAbstractionId: aId,
 			ToAbstractionId:   aId + ".beb",
-			BebBroadcast: &pb.BebBroadcast{Message: &pb.Message{
-				Type:              pb.Message_NNAR_INTERNAL_READ,
-				FromAbstractionId: aId,
-				ToAbstractionId:   aId,
-				NnarInternalRead: &pb.NnarInternalRead{
-					ReadId: nnar.ReadId,
+			BebBroadcast: &pb.BebBroadcast{
+				Message: &pb.Message{
+					Type:              pb.Message_NNAR_INTERNAL_READ,
+					FromAbstractionId: aId,
+					ToAbstractionId:   aId,
+					NnarInternalRead: &pb.NnarInternalRead{
+						ReadId: nnar.ReadId,
+					},
 				},
-			}},
+			},
 		}
 	case pb.Message_NNAR_READ:
-		nnar.ReadId += 1
+		nnar.ReadId = nnar.ReadId + 1
 		nnar.Acks = 0
 		nnar.ReadList = make(map[int32]*pb.NnarInternalValue)
 		nnar.Reading = true
+		log.Info("Init read with readid %v", nnar.ReadId)
 
 		msgToSend = &pb.Message{
 			Type:              pb.Message_BEB_BROADCAST,
@@ -126,9 +137,11 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 			},
 		}
 	case pb.Message_PL_DELIVER:
+		log.Debug("MACAR INTRU ACI")
 		switch m.PlDeliver.Message.Type {
 		case pb.Message_NNAR_INTERNAL_VALUE:
 			msgValue := m.PlDeliver.Message.NnarInternalValue
+			log.Info("NNAR Internal value for read %v reading (%v)", msgValue.ReadId, nnar.Reading)
 			if msgValue.ReadId == nnar.ReadId {
 				nnar.ReadList[m.PlDeliver.Sender.Port] = msgValue
 				nnar.ReadList[m.PlDeliver.Sender.Port].WriterRank = m.PlDeliver.Sender.Rank
@@ -166,8 +179,9 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 		case pb.Message_NNAR_INTERNAL_ACK:
 			msgValue := m.PlDeliver.Message.NnarInternalAck
 
+			log.Info("NNAR Internal ack for read %v, reading (%v)", msgValue.ReadId, nnar.Reading)
 			if msgValue.ReadId == nnar.ReadId {
-				nnar.Acks += 1
+				nnar.Acks = nnar.Acks + 1
 				if nnar.Acks > nnar.N/2 {
 					nnar.Acks = 0
 					if nnar.Reading {
@@ -196,6 +210,8 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 	default:
 		return errors.New("message not supported")
 	}
+
+	log.Info("NNAR SENDING MSG %v", msgToSend)
 
 	if msgToSend != nil {
 		nnar.MsgQueue <- msgToSend

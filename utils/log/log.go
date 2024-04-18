@@ -20,7 +20,7 @@ func Instantiate() error {
 	log.Default().Print("Log format: ", format)
 	zLogger, err := zap.Config{
 		Encoding:          format,
-		Level:             zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		Level:             zap.NewAtomicLevelAt(zapcore.DebugLevel),
 		DisableCaller:     false,
 		DisableStacktrace: false,
 		OutputPaths:       []string{"stdout"},

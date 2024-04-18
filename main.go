@@ -82,6 +82,8 @@ func main() {
 			log.Info("Failed to parse incoming message %v", err)
 		}
 
+		log.Debug("Received message hub-mine %v", m)
+
 		networkMessages <- m
 	})
 	if err != nil {
@@ -106,6 +108,7 @@ func main() {
 				s.StartEventLoop()
 				systems[m.SystemId] = s
 			default:
+				log.Warn("AM PRIMIT %v", m)
 				if s, ok := systems[m.SystemId]; ok {
 					s.AddMessage(m)
 				} else {

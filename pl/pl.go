@@ -4,6 +4,7 @@ import (
 	"amcds/pb"
 	"amcds/tcp"
 	"amcds/utils"
+	"amcds/utils/log"
 	"errors"
 	"net"
 
@@ -66,13 +67,14 @@ func (pl *PerfectLink) Handle(m *pb.Message) error {
 	case pb.Message_PL_SEND:
 		return pl.Send(m)
 	default:
-		return errors.New("Message not supported")
+		return errors.New("message not supported")
 	}
 
 	return nil
 }
 
 func (pl *PerfectLink) Send(m *pb.Message) error {
+	log.Debug("PLSEND %v", m)
 	msgToSend := &pb.Message{
 		SystemId:        pl.systemId,
 		ToAbstractionId: m.ToAbstractionId,
@@ -100,6 +102,7 @@ func (pl *PerfectLink) Send(m *pb.Message) error {
 func (pl *PerfectLink) Parse(date []byte) (*pb.Message, error) {
 	msg := &pb.Message{}
 	err := proto.Unmarshal(date, msg)
+	log.Debug("PARSE MSG %v", msg)
 	if err != nil {
 		return nil, err
 	}
