@@ -75,7 +75,8 @@ func (s *System) registerNnarAbstractions(key string) {
 		Timestamp:  0,
 		WriterRank: s.ownProcess.Rank,
 		Value:      -1,
-		ReadList:   make(map[int32]*pb.NnarInternalValue),
+		ReadId:     0,
+		ReadList:   make(map[string]*pb.NnarInternalValue),
 	}
 	s.abstractions[aId+".pl"] = pl.CreateCopyWithParentId(aId)
 	s.abstractions[aId+".beb"] = broadcast.Create(s.msgQueue, s.processes, aId+".beb")

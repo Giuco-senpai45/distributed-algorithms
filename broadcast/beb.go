@@ -27,6 +27,7 @@ func (beb *BestEffortBroadcast) Handle(m *pb.Message) error {
 				Type:              pb.Message_PL_SEND,
 				FromAbstractionId: beb.id,
 				ToAbstractionId:   beb.id + ".pl",
+				SystemId:          m.SystemId,
 				PlSend: &pb.PlSend{
 					Destination: p,
 					Message:     m.BebBroadcast.Message,
@@ -39,6 +40,7 @@ func (beb *BestEffortBroadcast) Handle(m *pb.Message) error {
 			Type:              pb.Message_BEB_DELIVER,
 			FromAbstractionId: beb.id,
 			ToAbstractionId:   m.PlDeliver.Message.ToAbstractionId,
+			SystemId:          m.SystemId,
 			BebDeliver: &pb.BebDeliver{
 				Sender:  m.PlDeliver.Sender,
 				Message: m.PlDeliver.Message,
