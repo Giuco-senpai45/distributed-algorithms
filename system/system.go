@@ -75,7 +75,6 @@ func (s *System) registerNnarAbstractions(key string) {
 		Timestamp:  0,
 		WriterRank: s.ownProcess.Rank,
 		Value:      -1,
-		ReadId:     0,
 		ReadList:   make(map[string]*pb.NnarInternalValue),
 	}
 	s.abstractions[aId+".pl"] = pl.CreateCopyWithParentId(aId)

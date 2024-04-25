@@ -32,6 +32,9 @@ func (nnar *NnAtomicRegister) Handle(m *pb.Message) error {
 		switch m.BebDeliver.Message.Type {
 		case pb.Message_NNAR_INTERNAL_READ:
 			incomingReadId := m.BebDeliver.Message.NnarInternalRead.ReadId
+			if nnar.ReadId == 0 {
+				nnar.ReadId = incomingReadId
+			}
 
 			log.Info("Internal read from %v", m.BebDeliver.Message.NnarInternalRead.ReadId)
 
