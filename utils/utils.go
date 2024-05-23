@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"amcds/pb"
 	"regexp"
 	"strconv"
 )
@@ -17,4 +18,36 @@ func GetRegisterId(abstractionId string) string {
 
 func Int32ToString(i int32) string {
 	return strconv.Itoa(int(i))
+}
+
+type ProcessMap map[string]*pb.ProcessId
+
+func GetProcessKey(p *pb.ProcessId) string {
+	return p.Owner + Int32ToString(p.Index)
+}
+
+func GetMaxRank(processes ProcessMap) *pb.ProcessId {
+	var maxRank *pb.ProcessId
+
+	for _, v := range processes {
+		if maxRank == nil || v.Rank > maxRank.Rank {
+			maxRank = v
+			continue
+		}
+	}
+
+	return maxRank
+}
+
+func GetMaxRankSlice(processes []*pb.ProcessId) *pb.ProcessId {
+	var maxRank *pb.ProcessId
+
+	for _, v := range processes {
+		if maxRank == nil || v.Rank > maxRank.Rank {
+			maxRank = v
+			continue
+		}
+	}
+
+	return maxRank
 }

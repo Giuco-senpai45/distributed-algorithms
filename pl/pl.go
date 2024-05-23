@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -54,10 +55,10 @@ func (pl *PerfectLink) Handle(m *pb.Message) error {
 			}
 		}
 		msg := &pb.Message{
+			Type:              pb.Message_PL_DELIVER,
 			SystemId:          m.SystemId,
 			FromAbstractionId: m.ToAbstractionId,
 			ToAbstractionId:   pl.parentId,
-			Type:              pb.Message_PL_DELIVER,
 			PlDeliver: &pb.PlDeliver{
 				Sender:  sender,
 				Message: m.NetworkMessage.Message,
@@ -76,9 +77,11 @@ func (pl *PerfectLink) Handle(m *pb.Message) error {
 func (pl *PerfectLink) Send(m *pb.Message) error {
 	log.Debug("PLSEND %v", m)
 	msgToSend := &pb.Message{
-		SystemId:        pl.systemId,
-		ToAbstractionId: m.ToAbstractionId,
-		Type:            pb.Message_NETWORK_MESSAGE,
+		Type:              pb.Message_NETWORK_MESSAGE,
+		SystemId:          pl.systemId,
+		FromAbstractionId: pl.parentId + ".pl",
+		ToAbstractionId:   m.ToAbstractionId,
+		MessageUuid:       uuid.New().String(),
 		NetworkMessage: &pb.NetworkMessage{
 			Message:             m.PlSend.Message,
 			SenderHost:          pl.host,
@@ -103,6 +106,7 @@ func (pl *PerfectLink) Parse(date []byte) (*pb.Message, error) {
 	msg := &pb.Message{}
 	err := proto.Unmarshal(date, msg)
 	log.Debug("PARSE MSG %v", msg)
+
 	if err != nil {
 		return nil, err
 	}
